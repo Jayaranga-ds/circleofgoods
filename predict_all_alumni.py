@@ -1,28 +1,51 @@
+
 import pandas as pd
 import joblib
+import os
 
-def predict_all_alumni():
+
+# Ensure outputs folder exists
+os.makedirs("outputs", exist_ok=True)
 
 
 # Load trained model
-    model = joblib.load("benefactor_model.pkl")
+model = joblib.load("outputs/benefactor_model.pkl")
+
 
 # Load alumni dataset
-    data = pd.read_excel("data/alumni_dataset_1000.xlsx")
+data = pd.read_excel("data/alumni_dataset_1000.xlsx")
 
-# Create CareerLength column if missing
-    data["CareerLength"] = data["YearsExperience"]
 
-# Select features used for prediction
-    features = data[["YearsExperience", "EngagementScore", "CareerLength"]]
+# Select features used during training
+features = data[
+    [
+        "College",
+        "Degree",
+        "Company",
+        "JobTitle",
+        "Skills",
+        "YearsExperience",
+        "EngagementScore",
+    ]
+]
+
 
 # Predict donation probability
-    data["DonationProbability"] = model.predict_proba(features)[:, 1]
+probabilities = model.predict_proba(features)[:, 1]
+
+
+# Add predictions to dataset
+data["DonationProbability"] = probabilities
+
+
+# Sort alumni by highest probability
+ranked = data.sort_values(by="DonationProbability", ascending=False)
+
 
 # Save results
-    data.to_excel("outputs/alumni_benefactor_ranking.xlsx", index=False)
+output_path = "outputs/alumni_benefactor_ranking.xlsx"
+ranked.to_excel(output_path, index=False)
 
-    print("Alumni prediction completed!")
 
-if __name__== "__main__":
-    predict_all_alumni()
+print("Prediction completed successfully!")
+print("Results saved to:", output_path)

@@ -1,33 +1,58 @@
+
 import pandas as pd
+import os
+
 
 def match_mentors():
 
+    os.makedirs("outputs", exist_ok=True)
 
-# Load alumni helping score data
+    students = pd.read_excel("data/students_dataset_5000.xlsx")
     alumni = pd.read_excel("outputs/alumni_helping_score.xlsx")
 
-# Load student data
-    students = pd.read_excel("data/students_dataset_5000.xlsx")
+    print("Students loaded:", len(students))
+    print("Alumni loaded:", len(alumni))
 
-# Example mentor matching logic
-    matches = []
+    recommendations = []
 
-    for _, student in students.iterrows():
-     mentor = alumni.iloc[0]   # Example: choose top alumni
+    for _, alum in alumni.iterrows():
 
-     matches.append({
-        "StudentName": student["Name"],
-        "MentorName": mentor["Name"],
-        "MentorHelpingScore": mentor["HelpingScore"]
-     })
+        alumni_skills = set(str(alum["Skills"]).lower().split(","))
 
-    matches_df = pd.DataFrame(matches)
+        scores = []
 
-# Save mentor matches
-    matches_df.to_excel("outputs/mentor_recommendations.xlsx", index=False)
+        for _, student in students.iterrows():
 
-    print("Mentor matching completed!")
+            student_skills = set(str(student["Skills"]).lower().split(","))
+
+            skill_overlap = len(student_skills & alumni_skills)
+
+            score = (
+                3 * skill_overlap
+                + 2 * float(alum["HelpingScore"])
+                + 0.1 * float(alum["YearsExperience"])
+                + 0.1 * float(alum["EngagementScore"])
+            )
+
+            scores.append({
+                "MentorCompany": alum["Company"],
+                "MentorRole": alum["JobTitle"],
+                "Student": student["Name"],
+                "MatchScore": round(score, 3)
+            })
+
+        top5 = sorted(scores, key=lambda x: x["MatchScore"], reverse=True)[:5]
+
+        recommendations.extend(top5)
+
+    df = pd.DataFrame(recommendations)
+
+    output_file = "outputs/mentor_student_recommendations.xlsx"
+    df.to_excel(output_file, index=False)
+
+    print("Mentor → Student recommendations generated!")
+    print("Saved to:", output_file)
 
 
-if __name__== "__main__":
-        match_mentors()
+if __name__ == "__main__":
+    match_mentors()

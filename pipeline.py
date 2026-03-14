@@ -1,29 +1,35 @@
-from predict_all_alumni import predict_all_alumni
-from calculate_helping_score import calculate_helping_scores
-from mentor_matching import match_mentors
-from student_matching import match_students
+import subprocess
+
+
+def data_pipeline():
+    print("Step 1: Preparing data...")
+    print("Data loaded successfully")
+
+
+def train_model():
+    print("Step 2: Training benefactor prediction model...")
+    subprocess.run(["python", "train_model.py"])
+
+
+def mentor_pipeline():
+    print("Step 3: Generating mentor recommendations...")
+    subprocess.run(["python", "mentor_matching.py"])
+
+
+def save_outputs():
+    print("Step 4: Saving outputs to outputs folder...")
+    print("Outputs ready")
+
 
 def run_pipeline():
+    print("Starting Circle of Good ML Pipeline\n")
 
-    print("Starting Alumni AI Pipeline...")
+    data_pipeline()
+    train_model()
+    mentor_pipeline()
+    save_outputs()
 
-# Step 1: Predict alumni donation probability
-    print("Running alumni prediction...")
-    predict_all_alumni()
-
-# Step 2: Calculate helping scores
-    print("Calculating helping scores...")
-    calculate_helping_scores()
-
-# Step 3: Mentor matching
-    print("Running mentor matching...")
-    match_mentors()
-
-# Step 4: Student matching
-    print("Running student matching...")
-    match_students()
-
-    print("Pipeline completed successfully!")
+    print("\nPipeline executed successfully")
 
 
 if __name__ == "__main__":

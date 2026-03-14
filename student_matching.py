@@ -1,53 +1,57 @@
+
 import pandas as pd
+import os
+
 
 def match_students():
 
+    os.makedirs("outputs", exist_ok=True)
 
+    # Load datasets
     students = pd.read_excel("data/students_dataset_5000.xlsx")
-    alumni = pd.read_excel("data/alumni_dataset_1000.xlsx")
+    alumni = pd.read_excel("outputs/alumni_helping_score.xlsx")
 
-    def skill_match(student_skills, alumni_skills):
+    recommendations = []
 
-        if pd.isna(student_skills) or pd.isna(alumni_skills):
-            return 0
+    for _, student in students.iterrows():
 
-        s = set(skill.strip().lower() for skill in student_skills.split(","))
-        a = set(skill.strip().lower() for skill in alumni_skills.split(","))
+        student_skills = set(str(student["Skills"]).lower().split(","))
+        interest = str(student["Interested"]).lower()
 
-        if len(a) == 0:
-            return 0
+        scores = []
 
-        return len(s & a) / len(a)
+        for _, alum in alumni.iterrows():
 
-    results = []
+            alumni_skills = set(str(alum["Skills"]).lower().split(","))
 
-    for _, alum in alumni.iterrows():
+            # Skill overlap
+            skill_overlap = len(student_skills & alumni_skills)
 
-        matches = []
+            # Interest match
+            interest_match = 1 if interest in alumni_skills else 0
 
-        for _, student in students.iterrows():
+            # Match score
+            score = (
+                2 * skill_overlap
+                + interest_match
+                + alum["HelpingScore"]
+            )
 
-            score = skill_match(student["Skills"], alum["Skills"])
+            scores.append((alum["Company"], alum["JobTitle"], score))
 
-            if score > 0:
-                matches.append({
-                "Alumni": alum["Name"],
+        # Sort and take top 5 mentors
+        top5 = sorted(scores, key=lambda x: x[2], reverse=True)[:5]
+
+        for mentor in top5:
+            recommendations.append({
                 "Student": student["Name"],
-                "MatchScore": round(score, 2)
+                "MentorCompany": mentor[0],
+                "MentorRole": mentor[1],
+                "MatchScore": mentor[2]
             })
 
-        top_students = sorted(matches, key=lambda x: x["MatchScore"], reverse=True)[:5]
+    df = pd.DataFrame(recommendations)
 
-        results.extend(top_students)
+    df.to_excel("outputs/student_mentor_recommendations.xlsx", index=False)
 
-    df = pd.DataFrame(results)
-
-    df = df.sort_values(["Alumni", "MatchScore"], ascending=[True, False])
-
-    df.to_excel("outputs/student_recommendations_for_alumni.xlsx", index=False)
-
-    print("Student recommendations for alumni created!")
-
-
-if __name__ == "__main__":
-        match_students()
+    print("Student mentor recommendations generated!")
